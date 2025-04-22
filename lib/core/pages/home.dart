@@ -10,12 +10,17 @@ class HomePage extends StatelessWidget {
         largeTitle: Text("Home"),
         transitionBetweenRoutes: true,
       ),
-      child: Center(
-        child: Column(
-          children: [
-            Image(image: AssetImage("assets/images/logo.png")),
-            Text("Hello World!"),
-          ],
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Center(
+            child: Column(
+              children: [
+                Image(image: AssetImage("assets/images/logo.png")),
+                Text("Hello World!"),
+              ],
+            ),
+          ),
         ),
       ),
     );
