@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "775656746417",
+    "project_id": "efhmni-2b260",
+    "storage_bucket": "efhmni-2b260.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775656746417:android:c2de13f69dcc365d2a2190",
+        "android_client_info": {
+          "package_name": "net.codexeg.efhmni"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFvrMDONT_JKWvgO3YRPsAh5yMkz847e4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

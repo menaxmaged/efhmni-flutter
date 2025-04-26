@@ -1,4 +1,6 @@
 import 'core/utils/helper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 //const force_cupertino = true;
 void main() async {
@@ -6,6 +8,9 @@ void main() async {
 
   await CacheHelper.init();
   log("isLoggedIn = $isLoggedIn");
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(Esm3niCupertino());
   /*
   if (kIsWeb) {
