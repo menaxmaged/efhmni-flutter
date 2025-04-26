@@ -1,4 +1,4 @@
-package com.example.efhmni
+package net.codexeg.efhmni
 
 import io.flutter.embedding.android.FlutterActivity
 
