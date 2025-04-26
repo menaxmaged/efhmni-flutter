@@ -1,9 +1,9 @@
 import 'helper.dart';
 
-const String appName = "Notk";
+const String appName = "Efhmni";
 final String appVersion = "1.0.0";
 final String appDescription =
-    "Notk is a language learning app that helps you learn Arabic through fun and interactive methods.";
+    "Efhmni is a language learning app that helps you learn Arabic through fun and interactive methods.";
 
 final String lettersLocalPath = "assets/images/letters/";
 final String numbersLocalPath = "assets/images/numbers/";

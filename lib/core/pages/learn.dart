@@ -1,3 +1,5 @@
+import 'package:efhmni/core/pages/Learning/words.dart';
+
 import '/core/utils/helper.dart';
 
 class LearnPage extends StatefulWidget {
@@ -72,10 +74,18 @@ class _LearnPageState extends State<LearnPage> {
                                   builder: (context) => LettersPage(),
                                 ),
                               );
+                            } else if (text == "الكلمات") {
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (context) => WordsPage(),
+                                ),
+                              );
                             }
-                            // Add similar conditions for other buttons
-                            // For now, just print the button text
                           },
+
+                          // Add similar conditions for other buttons
+                          // For now, just print the button text
                         );
                       }).toList(),
                 ),
