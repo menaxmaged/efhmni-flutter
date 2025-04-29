@@ -13,6 +13,8 @@ const primary_color = Color(0xFF7E4AEF);
 const default_username = "mena";
 const default_password = "allow2me";
 
+const String baseUrl = "https://tender-sculpin-badly.ngrok-free.app/";
+
 CupertinoThemeData mytheme(BuildContext context) {
   Brightness? brightness;
   if (isDarkMode == null) {

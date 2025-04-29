@@ -17,8 +17,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   CameraController? cameraController;
   bool _isRecording = false;
   bool _isSaving = false;
+  bool _isUploading = false;
   XFile? _recordedVideo;
   String? _errorMessage;
+  String? _translatedWord;
 
   @override
   void initState() {
@@ -92,7 +94,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+    });
     try {
       final XFile videoFile = await cameraController!.stopVideoRecording();
       setState(() {
@@ -107,8 +111,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } finally {
       setState(() => _isSaving = false);
     }
+    setState(() => _isUploading = true);
+
     try {
-      await ApiHandler.uploadVideo(filePath: _recordedVideo!.path);
+      String translation = await ApiHandler.uploadVideo(
+        filePath: _recordedVideo!.path,
+      );
+      setState(() {
+        _isUploading = false;
+        _translatedWord = translation;
+      });
     } catch (e) {
       _showError("Error uploading video: $e");
     }
@@ -156,8 +168,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               const SizedBox(height: 16),
               _RecordingStatus(),
               const SizedBox(height: 24),
-              if (_isSaving) const CupertinoActivityIndicator(radius: 15),
-              if (_recordedVideo != null && !_isSaving) _LastVideoInfo(),
+              if (_isSaving || _isUploading)
+                const CupertinoActivityIndicator(radius: 15),
+              if (_recordedVideo != null && !_isSaving && !_isUploading)
+                _Translation(),
             ],
           ),
         ),
@@ -232,6 +246,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           style: const TextStyle(fontSize: 14),
           textAlign: TextAlign.center,
         ),
+      ],
+    );
+  }
+
+  Widget _Translation() {
+    return Column(
+      children: [
+        SizedBox(height: 8),
+
+        Text(
+          _translatedWord!,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
       ],
     );
   }
