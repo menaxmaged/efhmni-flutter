@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:efhmni/core/utils/api-handler.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +104,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       setState(() => _isRecording = false);
     } finally {
       setState(() => _isSaving = false);
+    }
+    try {
+      await ApiHandler.uploadVideo(filePath: _recordedVideo!.path);
+    } catch (e) {
+      final err = e.toString();
+      _showError("Error uploading video: $err");
     }
   }
 

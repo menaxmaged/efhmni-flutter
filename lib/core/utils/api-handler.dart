@@ -3,25 +3,24 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiHandler {
-  static String ngrokLink = "";
+  static String ngrokLink =
+      "https://tender-sculpin-badly.ngrok-free.app/process_video";
 
   static Future<String> uploadVideo({required String filePath}) async {
-    final request = http.MultipartRequest("POST", Uri.parse(ngrokLink));
-    // final headers = {"Content-type": "multipart/form-data"};
+    try {
+      final uri = Uri.parse(ngrokLink.trim());
+      final request = http.MultipartRequest("POST", uri);
+      request.files.add(await http.MultipartFile.fromPath('video', filePath));
+      final response = await request.send();
 
-    request.files.add(await http.MultipartFile.fromPath('video', filePath));
-
-    // print(filePath);
-    var response = await request.send();
-
-    // print("Status Code:  ${response.statusCode}");
-
-    if (response.statusCode == 200) {
-      String val = await response.stream.bytesToString();
-      // print(val);
-      return val;
-    } else {
-      throw Exception('Failed to upload video');
+      if (response.statusCode == 200) {
+        return await response.stream.bytesToString();
+      } else {
+        throw Exception('Failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Upload Error: $e');
+      rethrow;
     }
   }
 }
