@@ -102,8 +102,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text("Video Recorder"),
+      navigationBar: const CupertinoNavigationBar.large(
+        largeTitle: Text("Video Recorder"),
       ),
       child: SafeArea(
         child: Padding(
