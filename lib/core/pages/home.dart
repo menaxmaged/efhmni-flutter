@@ -13,6 +13,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   bool _isRecording = false;
+  bool _isSaving = false; // <-- New
   XFile? _recordedVideo;
 
   @override
@@ -38,9 +39,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.inactive) {
       cameraController?.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      if (cameraController == null) {
-        _setupCameraController();
-      }
+      _setupCameraController();
     }
   }
 
@@ -65,24 +64,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _startRecording() async {
     if (cameraController == null || !cameraController!.value.isInitialized)
       return;
-    await cameraController!.startVideoRecording();
-    setState(() => _isRecording = true);
+
+    try {
+      await cameraController!.startVideoRecording();
+      setState(() => _isRecording = true);
+    } catch (e) {
+      print("Error starting video recording: $e");
+    }
   }
 
   Future<void> _stopRecording() async {
     if (cameraController == null || !cameraController!.value.isRecordingVideo)
       return;
-    final XFile videoFile = await cameraController!.stopVideoRecording();
-    setState(() {
-      _isRecording = false;
-      _recordedVideo = videoFile;
-    });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Video saved: ${_recordedVideo?.path}')),
-      );
+    setState(() => _isSaving = true); // <-- Show saving indicator
+    try {
+      final XFile videoFile = await cameraController!.stopVideoRecording();
+      setState(() {
+        _isRecording = false;
+        _recordedVideo = videoFile;
+      });
+
+      // if (mounted) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(content: Text('Video saved: ${_recordedVideo?.path}')),
+      //   );
       print('Video saved at: ${_recordedVideo?.path}');
+      //   }
+    } catch (e) {
+      print('Error stopping video recording: $e');
+      setState(() => _isRecording = false);
+    } finally {
+      setState(() => _isSaving = false); // <-- Hide saving indicator
     }
   }
 
@@ -90,48 +103,82 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text("Home"),
-        transitionBetweenRoutes: true,
+        middle: Text("Video Recorder"),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Center(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                _CameraUI(),
-                const SizedBox(height: 20),
-                Text(_isRecording ? 'Recording...' : 'Press to Record'),
-                IconButton(
-                  onPressed: _isRecording ? _stopRecording : _startRecording,
-                  icon: Icon(
-                    _isRecording
-                        ? CupertinoIcons.stop_circle
-                        : CupertinoIcons.video_camera,
-                    size: 40,
-                  ),
-                ),
-                if (_recordedVideo != null) ...[
-                  const SizedBox(height: 20),
-                  Text('Last Video: ${_recordedVideo!.path.split('/').last}'),
-                ],
-              ],
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _CameraPreviewWidget(),
+              const SizedBox(height: 24),
+              _recordButton(),
+              const SizedBox(height: 16),
+              _RecordingStatus(),
+              const SizedBox(height: 24),
+              if (_isSaving)
+                const CupertinoActivityIndicator(radius: 15), // Saving spinner
+              if (_recordedVideo != null && !_isSaving) _LastVideoInfo(),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _CameraUI() {
+  Widget _CameraPreviewWidget() {
     if (cameraController == null || !cameraController!.value.isInitialized) {
       return const Center(child: CupertinoActivityIndicator());
     }
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.6,
-      width: MediaQuery.of(context).size.width,
-      child: CameraPreview(cameraController!),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.5,
+        width: double.infinity,
+        child: CameraPreview(cameraController!),
+      ),
+    );
+  }
+
+  Widget _recordButton() {
+    return GestureDetector(
+      onTap: _isRecording ? _stopRecording : _startRecording,
+      child: Icon(
+        _isRecording
+            ? CupertinoIcons.stop_circle
+            : CupertinoIcons.videocam_circle,
+        size: 80,
+        color: _isRecording ? Colors.redAccent : null,
+      ),
+    );
+  }
+
+  Widget _RecordingStatus() {
+    return Text(
+      _isRecording ? 'Recording...' : 'Tap to Start Recording',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: _isRecording ? Colors.red : CupertinoColors.activeBlue,
+      ),
+    );
+  }
+
+  Widget _LastVideoInfo() {
+    return Column(
+      children: [
+        const Text(
+          "Last Recorded Video:",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _recordedVideo!.path.split('/').last,
+          style: const TextStyle(fontSize: 14),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
