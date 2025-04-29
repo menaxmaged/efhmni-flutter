@@ -16,7 +16,7 @@ class ApiHandler {
       if (response.statusCode == 200) {
         return await response.stream.bytesToString();
       } else {
-        throw Exception('Failed with status: ${response.statusCode}');
+        throw 'Failed with status: ${response.statusCode}';
       }
     } catch (e) {
       print('Upload Error: $e');

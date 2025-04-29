@@ -56,8 +56,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       cameraController = CameraController(
         _cameras.first,
         ResolutionPreset.high,
-        imageFormatGroup:
-            ImageFormatGroup.yuv420, // <--- Force compatible format
+        imageFormatGroup: ImageFormatGroup.yuv420,
       );
       await cameraController!.initialize();
       if (!mounted) return;
@@ -66,8 +65,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _errorMessage = null;
       });
     } catch (e) {
-      print("Error setting up the camera: $e");
-      setState(() => _errorMessage = "Error initializing camera: $e");
+      _showError("Error initializing camera: $e");
     }
   }
 
@@ -79,7 +77,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     try {
       await cameraController!.startVideoRecording();
-      setState(() => _isRecording = true);
+      setState(() {
+        _isRecording = true;
+        _errorMessage = null;
+      });
     } catch (e) {
       _showError("Error starting recording: $e");
     }
@@ -97,6 +98,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       setState(() {
         _isRecording = false;
         _recordedVideo = videoFile;
+        _errorMessage = null;
       });
       print('Video saved at: ${_recordedVideo?.path}');
     } catch (e) {
@@ -108,8 +110,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       await ApiHandler.uploadVideo(filePath: _recordedVideo!.path);
     } catch (e) {
-      final err = e.toString();
-      _showError("Error uploading video: $err");
+      _showError("Error uploading video: $e");
     }
   }
 
@@ -117,9 +118,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (!mounted) return;
     setState(() => _errorMessage = message);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -150,7 +166,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _CameraPreviewWidget() {
-    if (_errorMessage != null) {
+    if (_errorMessage != null &&
+        (cameraController == null || !cameraController!.value.isInitialized)) {
       return Center(
         child: Text(
           _errorMessage!,
@@ -188,13 +205,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _RecordingStatus() {
-    return Text(
-      _isRecording ? 'Recording...' : 'Tap to Start Recording',
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: _isRecording ? Colors.red : CupertinoColors.activeBlue,
-      ),
+    return Column(
+      children: [
+        Text(
+          _isRecording ? 'Recording...' : 'Tap to Start Recording',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: _isRecording ? Colors.red : CupertinoColors.activeBlue,
+          ),
+        ),
+      ],
     );
   }
 
