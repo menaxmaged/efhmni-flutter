@@ -3,7 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -12,45 +12,85 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
+  bool _isRecording = false;
+  XFile? _recordedVideo;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupCameraController();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    cameraController?.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // App state changed before we got the chance to initialize.
-    if (cameraController == null ||
-        cameraController?.value.isInitialized == false) {
+    if (cameraController == null || !cameraController!.value.isInitialized) {
       return;
     }
 
     if (state == AppLifecycleState.inactive) {
       cameraController?.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      _setupCameraController();
+      if (cameraController == null) {
+        _setupCameraController();
+      }
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _setupCameraController();
-    WidgetsBinding.instance.addObserver(
-      this,
-    ); // Add the observer to listen for app lifecycle changes
+  Future<void> _setupCameraController() async {
+    try {
+      final _cameras = await availableCameras();
+      if (_cameras.isNotEmpty) {
+        cameraController = CameraController(
+          _cameras.first,
+          ResolutionPreset.high,
+        );
+        await cameraController!.initialize();
+        setState(() {
+          cameras = _cameras;
+        });
+      }
+    } catch (e) {
+      print("Error setting up the camera: $e");
+    }
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(
-      this,
-    ); // Remove observer to avoid memory leaks
-    cameraController?.dispose();
-    super.dispose();
+  Future<void> _startRecording() async {
+    if (cameraController == null || !cameraController!.value.isInitialized)
+      return;
+    await cameraController!.startVideoRecording();
+    setState(() => _isRecording = true);
+  }
+
+  Future<void> _stopRecording() async {
+    if (cameraController == null || !cameraController!.value.isRecordingVideo)
+      return;
+    final XFile videoFile = await cameraController!.stopVideoRecording();
+    setState(() {
+      _isRecording = false;
+      _recordedVideo = videoFile;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Video saved: ${_recordedVideo?.path}')),
+      );
+      print('Video saved at: ${_recordedVideo?.path}');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar.large(
-        largeTitle: Text("Home"),
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text("Home"),
         transitionBetweenRoutes: true,
       ),
       child: SafeArea(
@@ -59,13 +99,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           child: Center(
             child: Column(
               children: [
-                SizedBox(height: 50),
+                const SizedBox(height: 20),
                 _CameraUI(),
-                Text('data'),
+                const SizedBox(height: 20),
+                Text(_isRecording ? 'Recording...' : 'Press to Record'),
                 IconButton(
-                  onPressed: () async {},
-                  icon: Icon(CupertinoIcons.video_camera),
+                  onPressed: _isRecording ? _stopRecording : _startRecording,
+                  icon: Icon(
+                    _isRecording
+                        ? CupertinoIcons.stop_circle
+                        : CupertinoIcons.video_camera,
+                    size: 40,
+                  ),
                 ),
+                if (_recordedVideo != null) ...[
+                  const SizedBox(height: 20),
+                  Text('Last Video: ${_recordedVideo!.path.split('/').last}'),
+                ],
               ],
             ),
           ),
@@ -75,48 +125,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _CameraUI() {
-    if (cameraController == null ||
-        cameraController?.value.isInitialized == false) {
+    if (cameraController == null || !cameraController!.value.isInitialized) {
       return const Center(child: CupertinoActivityIndicator());
     }
-
-    return SafeArea(
-      child: SizedBox.expand(
-        /// Updated to correctly access screen height
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: MediaQuery.sizeOf(context).height * 0.30,
-              width: MediaQuery.sizeOf(context).width * 0.80,
-              child: CameraPreview(cameraController!),
-            ),
-          ],
-        ),
-      ),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
+      width: MediaQuery.of(context).size.width,
+      child: CameraPreview(cameraController!),
     );
-  }
-
-  Future<void> _setupCameraController() async {
-    try {
-      List<CameraDescription> _cameras = await availableCameras();
-
-      if (_cameras.isNotEmpty) {
-        setState(() {
-          cameras = _cameras;
-          cameraController = CameraController(
-            _cameras.first,
-            ResolutionPreset.high,
-          );
-        });
-
-        await cameraController
-            ?.initialize(); // Use await here to ensure proper initialization
-        setState(() {});
-      }
-    } catch (e) {
-      print("Error setting up the camera: $e");
-    }
   }
 }

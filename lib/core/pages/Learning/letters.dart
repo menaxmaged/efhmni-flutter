@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '/core/utils/helper.dart';
 
 class LettersPage extends StatefulWidget {
-  const LettersPage({Key? key}) : super(key: key);
+  const LettersPage({super.key});
 
   @override
   State<LettersPage> createState() => _LettersPageState();

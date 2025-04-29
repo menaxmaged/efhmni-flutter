@@ -1,7 +1,7 @@
 import '/core/utils/helper.dart';
 
 class NumbersPage extends StatefulWidget {
-  const NumbersPage({Key? key}) : super(key: key);
+  const NumbersPage({super.key});
 
   @override
   State<NumbersPage> createState() => _NumbersPageState();
