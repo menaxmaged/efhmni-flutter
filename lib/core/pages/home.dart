@@ -13,7 +13,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
-  List<CameraDescription> cameras = [];
   CameraController? cameraController;
   bool _isRecording = false;
   bool _isSaving = false;
@@ -21,11 +20,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   XFile? _recordedVideo;
   String? _errorMessage;
   String? _translatedWord;
+  int _selectedCameraIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _setupCameraController();
+    _setupCameraController(_selectedCameraIndex);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -44,26 +44,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.inactive) {
       cameraController?.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      _setupCameraController();
+      _setupCameraController(_selectedCameraIndex);
     }
   }
 
-  Future<void> _setupCameraController() async {
+  Future<void> _setupCameraController(int cameraIndex) async {
     try {
       final _cameras = await availableCameras();
+
+      // Find the front camera
+      final UsedCamera = _cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+        orElse: () => _cameras.first, // fallback if front not found
+      );
       if (_cameras.isEmpty) {
         setState(() => _errorMessage = "No camera available.");
         return;
       }
       cameraController = CameraController(
-        _cameras.first,
+        _cameras[cameraIndex],
         ResolutionPreset.high,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );
+
       await cameraController!.initialize();
       if (!mounted) return;
       setState(() {
-        cameras = _cameras;
+        //  cameras = _cameras;
         _errorMessage = null;
       });
     } catch (e) {
@@ -164,7 +171,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             children: [
               _CameraPreviewWidget(),
               const SizedBox(height: 24),
-              _recordButton(),
+              Row(
+                mainAxisSize:
+                    MainAxisSize.min, // <- important to shrink row to content
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Switch Button
+                  CupertinoButton(
+                    padding: EdgeInsets.all(10),
+                    color: CupertinoColors.systemGrey5,
+                    borderRadius: BorderRadius.circular(30),
+                    child: Icon(CupertinoIcons.camera_rotate, size: 28),
+                    onPressed: () async {
+                      _selectedCameraIndex = _selectedCameraIndex == 1 ? 0 : 1;
+                      await _setupCameraController(_selectedCameraIndex);
+                    },
+                  ),
+
+                  const SizedBox(width: 20),
+
+                  // Record Button
+                  _recordButton(),
+                ],
+              ),
+
               const SizedBox(height: 16),
               _RecordingStatus(),
               const SizedBox(height: 24),
