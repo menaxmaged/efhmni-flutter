@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +15,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<CameraDescription> cameras = [];
   CameraController? cameraController;
   bool _isRecording = false;
-  bool _isSaving = false; // <-- New
+  bool _isSaving = false;
   XFile? _recordedVideo;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -32,9 +35,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (cameraController == null || !cameraController!.value.isInitialized) {
+    if (cameraController == null || !cameraController!.value.isInitialized)
       return;
-    }
 
     if (state == AppLifecycleState.inactive) {
       cameraController?.dispose();
@@ -46,57 +48,71 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _setupCameraController() async {
     try {
       final _cameras = await availableCameras();
-      if (_cameras.isNotEmpty) {
-        cameraController = CameraController(
-          _cameras.first,
-          ResolutionPreset.high,
-        );
-        await cameraController!.initialize();
-        setState(() {
-          cameras = _cameras;
-        });
+      if (_cameras.isEmpty) {
+        setState(() => _errorMessage = "No camera available.");
+        return;
       }
+      cameraController = CameraController(
+        _cameras.first,
+        ResolutionPreset.high,
+        imageFormatGroup:
+            ImageFormatGroup.yuv420, // <--- Force compatible format
+      );
+      await cameraController!.initialize();
+      if (!mounted) return;
+      setState(() {
+        cameras = _cameras;
+        _errorMessage = null;
+      });
     } catch (e) {
       print("Error setting up the camera: $e");
+      setState(() => _errorMessage = "Error initializing camera: $e");
     }
   }
 
   Future<void> _startRecording() async {
-    if (cameraController == null || !cameraController!.value.isInitialized)
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      _showError("Camera not ready.");
       return;
+    }
 
     try {
       await cameraController!.startVideoRecording();
       setState(() => _isRecording = true);
     } catch (e) {
-      print("Error starting video recording: $e");
+      _showError("Error starting recording: $e");
     }
   }
 
   Future<void> _stopRecording() async {
-    if (cameraController == null || !cameraController!.value.isRecordingVideo)
+    if (cameraController == null || !cameraController!.value.isRecordingVideo) {
+      _showError("No recording in progress.");
       return;
+    }
 
-    setState(() => _isSaving = true); // <-- Show saving indicator
+    setState(() => _isSaving = true);
     try {
       final XFile videoFile = await cameraController!.stopVideoRecording();
       setState(() {
         _isRecording = false;
         _recordedVideo = videoFile;
       });
-
-      // if (mounted) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     SnackBar(content: Text('Video saved: ${_recordedVideo?.path}')),
-      //   );
       print('Video saved at: ${_recordedVideo?.path}');
-      //   }
     } catch (e) {
-      print('Error stopping video recording: $e');
+      _showError("Error stopping recording: $e");
       setState(() => _isRecording = false);
     } finally {
-      setState(() => _isSaving = false); // <-- Hide saving indicator
+      setState(() => _isSaving = false);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    setState(() => _errorMessage = message);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -117,8 +133,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               const SizedBox(height: 16),
               _RecordingStatus(),
               const SizedBox(height: 24),
-              if (_isSaving)
-                const CupertinoActivityIndicator(radius: 15), // Saving spinner
+              if (_isSaving) const CupertinoActivityIndicator(radius: 15),
               if (_recordedVideo != null && !_isSaving) _LastVideoInfo(),
             ],
           ),
@@ -128,9 +143,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _CameraPreviewWidget() {
+    if (_errorMessage != null) {
+      return Center(
+        child: Text(
+          _errorMessage!,
+          style: const TextStyle(color: Colors.red, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
     if (cameraController == null || !cameraController!.value.isInitialized) {
       return const Center(child: CupertinoActivityIndicator());
     }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(

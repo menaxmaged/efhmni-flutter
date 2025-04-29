@@ -7,7 +7,8 @@ export 'constants.dart';
 export 'cache-helper.dart';
 export 'package:flutter/cupertino.dart';
 export '/Layout.dart';
-export ' firebase_auth.dart';
+export 'firebase_auth.dart';
+export 'api-handler.dart';
 
 export '/core/pages/pages.dart';
 export 'dart:developer' hide Flow;
