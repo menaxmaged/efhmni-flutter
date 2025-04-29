@@ -230,7 +230,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.5,
         width: double.infinity,
-        child: CameraPreview(cameraController!),
+        child: AspectRatio(
+          aspectRatio: cameraController!.value.aspectRatio,
+          child: CameraPreview(cameraController!),
+        ),
       ),
     );
   }
