@@ -1,13 +1,13 @@
 import '/core/utils/helper.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class Signup extends StatefulWidget {
+  const Signup({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<Signup> createState() => _SignupState();
 }
 
-class _LoginState extends State<Login> {
+class _SignupState extends State<Signup> {
   @override
   Widget build(BuildContext context) {
     TextEditingController username = TextEditingController();
@@ -65,7 +65,7 @@ class _LoginState extends State<Login> {
                         // Handle login action
 
                         // Call the login function
-                        var result = await login(username.text, password.text);
+                        var result = await signup(username.text, password.text);
 
                         // Check if login was successful
                         if (result == true) {
@@ -73,7 +73,7 @@ class _LoginState extends State<Login> {
                           Navigator.pushReplacement(
                             context,
                             CupertinoPageRoute(
-                              builder: (context) => const MainScreen(),
+                              builder: (context) => const Login(),
                             ),
                           );
                         } else {
@@ -82,7 +82,7 @@ class _LoginState extends State<Login> {
                             context: context,
                             builder:
                                 (context) => CupertinoAlertDialog(
-                                  title: const Text('Login Failed'),
+                                  title: const Text('Sign up Failed'),
                                   content: Text(result),
                                   actions: [
                                     CupertinoDialogAction(
@@ -97,30 +97,11 @@ class _LoginState extends State<Login> {
                         }
                       },
                       child: const Text(
-                        'Login',
+                        'Sign up',
                         style: TextStyle(
                           color: CupertinoColors.white,
                           fontSize: 18,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      onPressed: () {
-                        // Handle sign up action
-                        Navigator.pushReplacement(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (context) => const Signup(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(fontSize: 18),
                       ),
                     ),
                   ),

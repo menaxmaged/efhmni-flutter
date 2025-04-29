@@ -6,3 +6,4 @@ export 'learn.dart';
 export 'settings.dart';
 export 'learning/numbers.dart';
 export 'learning/letters.dart';
+export 'signup.dart';
