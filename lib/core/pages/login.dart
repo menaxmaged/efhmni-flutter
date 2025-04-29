@@ -60,33 +60,25 @@ class _LoginState extends State<Login> {
                   ), // Adds space between the text field and the button
                   SizedBox(
                     width: double.infinity,
-
                     child: CupertinoButton.filled(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle login action
-                        if (login(username.text, password.text)) {
-                          Navigator.pushReplacement(
-                            context,
-                            CupertinoPageRoute(
-                              builder: (context) => const MainScreen(),
-                            ),
-                          );
-                        } else {
-                          // Handle login failure
 
-                          log(
-                            "Login failed for user: ${username.text}",
-                            name: 'LoginLogger',
-                            level: 3000,
-                          ); // level 1000 = severe
+                        // Call the login function
+                        var result = await login(username.text, password.text);
+
+                        // Check if login was successful
+                        if (result == true) {
+                          // Navigate to the next page on success
+                          Navigator.pop(context);
+                        } else {
+                          // Display error message
                           showCupertinoDialog(
                             context: context,
                             builder:
                                 (context) => CupertinoAlertDialog(
                                   title: const Text('Login Failed'),
-                                  content: const Text(
-                                    'Invalid username or password.',
-                                  ),
+                                  content: Text(result),
                                   actions: [
                                     CupertinoDialogAction(
                                       child: const Text('OK'),
@@ -122,7 +114,6 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                   ),
-                  // Adds space between the button and the text
                 ],
               ),
             ),
