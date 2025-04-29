@@ -111,7 +111,7 @@ class _LoginState extends State<Login> {
                     child: CupertinoButton(
                       onPressed: () {
                         // Handle sign up action
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           CupertinoPageRoute(
                             builder: (context) => const Signup(),

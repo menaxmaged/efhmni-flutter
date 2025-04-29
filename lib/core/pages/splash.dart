@@ -1,5 +1,6 @@
 import '/core/utils/helper.dart';
 import 'package:lottie/lottie.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,18 +24,17 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Start the animation
     _controller.forward().then((_) async {
-      // Navigate to Login screen after the animation completes
-      // Check if the user is logged in
-      //setupCacheHelper();
-      //await CacheHelper.init();
-      if (isLoggedIn) {
-        // If logged in, navigate to the main screen
+      // Check if the user is logged in by checking FirebaseAuth.instance.currentUser
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // If the user is logged in, navigate to the main screen
         Navigator.pushReplacement(
           context,
           CupertinoPageRoute(builder: (context) => const MainScreen()),
         );
       } else {
-        // If not logged in, navigate to the login screen
+        // If the user is not logged in, navigate to the login screen
         Navigator.pushReplacement(
           context,
           CupertinoPageRoute(builder: (context) => const Login()),
