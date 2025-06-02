@@ -1,6 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:efhmni/core/utils/helper.dart';
 
 class WordsPage extends StatefulWidget {
   const WordsPage({super.key});
@@ -12,22 +11,11 @@ class WordsPage extends StatefulWidget {
 class _WordsPageState extends State<WordsPage> {
   @override
   void initState() {
-    getData();
     super.initState();
   }
 
-  Future getData() async {
-    var url = Uri.https('dog.ceo', '/api/breeds/image/random');
-    var response = await http.get(url);
-    if (response.statusCode == 200) {
-      var dog = jsonDecode(response.body);
-      var dogPhoto = dog['message'];
-      print(dogPhoto);
-      return dogPhoto;
-    }
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-  }
+  int selectedIndex = 0;
+  int selectedNumber = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,23 +26,113 @@ class _WordsPageState extends State<WordsPage> {
         previousPageTitle: "Back",
       ),
       child: SafeArea(
-        child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              FutureBuilder(
-                future: getData(),
-                builder: (context, AsyncSnapshot snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CupertinoActivityIndicator();
-                  }
-                  if (snapshot.hasData) {
-                    var photo = snapshot.data;
-                    return Image.network(photo);
-                  } else {
-                    return Center(child: Text("Error"));
-                  }
-                },
+              const SizedBox(height: 15),
+              Expanded(
+                flex: 2,
+                child: PageView.builder(
+                  onPageChanged: (index) {
+                    setState(() {
+                      selectedNumber = index;
+                    });
+                  },
+                  itemCount: numbers.length,
+                  controller: PageController(viewportFraction: 1),
+                  itemBuilder: (context, index) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        gradient: const LinearGradient(
+                          colors: [
+                            primary_color,
+                            Color(0xff000000),
+                            Color(0xff2B2A2C),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                      child: Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          color: const Color(0xff2A2A2A),
+                          image: DecorationImage(
+                            fit: BoxFit.fitHeight,
+                            image: AssetImage(
+                              imagesWithText[selectedNumber]['image']!,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+              SizedBox(
+                height: 150,
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    childAspectRatio: 1.1,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: imagesWithText.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          setState(() {
+                            selectedNumber = index;
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [
+                                primary_color,
+                                Color(0xff000000),
+                                Color(0xff2B2A2C),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                          child: Container(
+                            margin: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color:
+                                  selectedNumber == index
+                                      ? primary_color
+                                      : const Color(0xff2A2A2A),
+                            ),
+                            child: Center(
+                              child: Text(
+                                imagesWithText[index]['text']!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 24,
+                                  color: CupertinoColors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),

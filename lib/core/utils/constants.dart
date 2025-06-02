@@ -124,3 +124,11 @@ logError(String message, {String? name}) {
     time: DateTime.now(),
   );
 }
+
+final List<Map<String, String>> imagesWithText = [
+  {'image': 'assets/images/words/mom.png', 'text': 'ام'},
+  {'image': 'assets/images/words/me.png', 'text': 'أنا'},
+  {'image': 'assets/images/words/dad.png', 'text': 'اب'},
+  {'image': 'assets/images/words/bro.png', 'text': 'أخ'},
+  {'image': 'assets/images/words/sis.png', 'text': 'أخت'},
+];
