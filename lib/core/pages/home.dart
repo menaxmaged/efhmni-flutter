@@ -320,41 +320,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
           )
         else
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Icon(
-                    CupertinoIcons.camera,
-                    color: CupertinoColors.activeBlue,
-                  ),
-                  Text(
-                    'Take Photo',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: CupertinoColors.activeBlue,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 40),
-              Column(
-                children: [
-                  Icon(
-                    CupertinoIcons.videocam,
-                    color: CupertinoColors.activeBlue,
-                  ),
-                  Text(
-                    'Record Video',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: CupertinoColors.activeBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  ],
           ),
       ],
     );
