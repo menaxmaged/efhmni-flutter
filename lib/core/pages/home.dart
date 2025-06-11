@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:efhmni/core/utils/api-handler.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:camera/camera.dart';
@@ -18,8 +16,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isSaving = false;
   bool _isUploading = false;
   XFile? _recordedVideo;
+  XFile? _capturedImage;
   String? _errorMessage;
   String? _translatedWord;
+  String? _translatedImageWord;
   int _selectedCameraIndex = 0;
 
   @override
@@ -52,11 +52,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final _cameras = await availableCameras();
 
-      // Find the front camera
-      final UsedCamera = _cameras.firstWhere(
-        (cam) => cam.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras.first, // fallback if front not found
-      );
       if (_cameras.isEmpty) {
         setState(() => _errorMessage = "No camera available.");
         return;
@@ -70,7 +65,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       await cameraController!.initialize();
       if (!mounted) return;
       setState(() {
-        //  cameras = _cameras;
         _errorMessage = null;
       });
     } catch (e) {
@@ -133,6 +127,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _takePicture() async {
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      _showError("Camera not ready.");
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final XFile imageFile = await cameraController!.takePicture();
+      setState(() {
+        _capturedImage = imageFile;
+        _errorMessage = null;
+      });
+      print('Image saved at: ${_capturedImage?.path}');
+
+      setState(() => _isUploading = true);
+
+      // String translation = await ApiHandler.uploadImage(
+      //   filePath: _capturedImage!.path,
+      // );
+      String translation = 'test';
+      setState(() {
+        _isUploading = false;
+        _translatedImageWord = translation;
+      });
+    } catch (e) {
+      _showError("Error taking picture: $e");
+      setState(() => _isUploading = false);
+    } finally {
+      setState(() => _isSaving = false);
+    }
+  }
+
   void _showError(String message) {
     if (!mounted) return;
     setState(() => _errorMessage = message);
@@ -161,7 +189,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar.large(
-        largeTitle: Text("Video Recorder"),
+        largeTitle: Text("Camera & Video"),
       ),
       child: SafeArea(
         child: Padding(
@@ -190,6 +218,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                   const SizedBox(width: 20),
 
+                  // Image Capture Button
+                  _imageButton(),
+
+                  const SizedBox(width: 20),
+
                   // Record Button
                   _recordButton(),
                 ],
@@ -200,7 +233,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               const SizedBox(height: 24),
               if (_isSaving || _isUploading)
                 const CupertinoActivityIndicator(radius: 15),
-              if (_recordedVideo != null && !_isSaving && !_isUploading)
+              if ((_recordedVideo != null || _capturedImage != null) &&
+                  !_isSaving &&
+                  !_isUploading)
                 _Translation(),
             ],
           ),
@@ -251,34 +286,76 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _RecordingStatus() {
-    return Column(
-      children: [
-        Text(
-          _isRecording ? 'Recording...' : 'Tap to Start Recording',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: _isRecording ? Colors.red : CupertinoColors.activeBlue,
-          ),
-        ),
-      ],
+  Widget _imageButton() {
+    return GestureDetector(
+      onTap: _isSaving ? null : _takePicture,
+      child: Icon(
+        CupertinoIcons.camera_circle,
+        size: 80,
+        color:
+            _isSaving ? CupertinoColors.systemGrey : CupertinoColors.activeBlue,
+      ),
     );
   }
 
-  Widget _LastVideoInfo() {
+  Widget _RecordingStatus() {
     return Column(
       children: [
-        const Text(
-          "Last Recorded Video:",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _recordedVideo!.path.split('/').last,
-          style: const TextStyle(fontSize: 14),
-          textAlign: TextAlign.center,
-        ),
+        if (_isRecording)
+          Text(
+            'Recording Video...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.red,
+            ),
+          )
+        else if (_isSaving)
+          Text(
+            'Processing...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.systemOrange,
+            ),
+          )
+        else
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  Icon(
+                    CupertinoIcons.camera,
+                    color: CupertinoColors.activeBlue,
+                  ),
+                  Text(
+                    'Take Photo',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: CupertinoColors.activeBlue,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: 40),
+              Column(
+                children: [
+                  Icon(
+                    CupertinoIcons.videocam,
+                    color: CupertinoColors.activeBlue,
+                  ),
+                  Text(
+                    'Record Video',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: CupertinoColors.activeBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -287,12 +364,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return Column(
       children: [
         SizedBox(height: 8),
-
-        Text(
-          _translatedWord!,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
+        if (_translatedWord != null)
+          Column(
+            children: [
+              Text(
+                "Video Translation:",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: CupertinoColors.systemBlue,
+                ),
+              ),
+              Text(
+                _translatedWord!,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        if (_translatedImageWord != null)
+          Column(
+            children: [
+              Text(
+                "Image Translation:",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: CupertinoColors.systemGreen,
+                ),
+              ),
+              Text(
+                _translatedImageWord!,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
       ],
     );
   }
