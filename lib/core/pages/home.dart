@@ -145,10 +145,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       setState(() => _isUploading = true);
 
-      // String translation = await ApiHandler.uploadImage(
-      //   filePath: _capturedImage!.path,
-      // );
-      String translation = 'test';
+      String translation = await ApiHandler.uploadImage(
+        filePath: _capturedImage!.path,
+      );
+      //String translation = 'test';
       setState(() {
         _isUploading = false;
         _translatedImageWord = translation;
