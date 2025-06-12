@@ -12,8 +12,9 @@ class ApiHandler {
       final uri = Uri.parse(videoEndpoint.trim());
       final request = http.MultipartRequest("POST", uri);
       request.files.add(await http.MultipartFile.fromPath('video', filePath));
-      final response = await request.send();
-
+      final response = await request.send().timeout(
+        const Duration(minutes: 10),
+      );
       if (response.statusCode == 200) {
         return await response.stream.bytesToString();
       } else {
