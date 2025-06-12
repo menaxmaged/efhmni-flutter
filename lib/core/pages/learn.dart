@@ -15,7 +15,6 @@ class _LearnPageState extends State<LearnPage> {
     "الارقــام", // Numbers
     "الحروف", // Letters
     "الكلمات", // Words
-    "الجمل", // Sentences
   ];
 
   @override
