@@ -64,6 +64,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       await cameraController!.initialize();
       if (!mounted) return;
+
       setState(() {
         _errorMessage = null;
       });
@@ -95,15 +96,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() => _isSaving = true);
     try {
       final XFile videoFile = await cameraController!.stopVideoRecording();
       setState(() {
         _isRecording = false;
         _recordedVideo = videoFile;
-        _errorMessage = null;
+        _translatedImageWord = null; // clear old translation
       });
       print('Video saved at: ${_recordedVideo?.path}');
     } catch (e) {
@@ -112,8 +111,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } finally {
       setState(() => _isSaving = false);
     }
-    setState(() => _isUploading = true);
 
+    if (_recordedVideo != null) {
+    setState(() => _isUploading = true);
     try {
       String translation = await ApiHandler.uploadVideo(
         filePath: _recordedVideo!.path,
@@ -124,6 +124,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     } catch (e) {
       _showError("Error uploading video: $e");
+        setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -134,31 +136,36 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     setState(() => _isSaving = true);
-
     try {
       final XFile imageFile = await cameraController!.takePicture();
       setState(() {
         _capturedImage = imageFile;
-        _errorMessage = null;
+        _translatedWord = null; // clear old translation
       });
       print('Image saved at: ${_capturedImage?.path}');
+    } catch (e) {
+      _showError("Error taking picture: $e");
+      setState(() => _isSaving = false);
+      return;
+    }
 
+    if (_capturedImage != null) {
       setState(() => _isUploading = true);
-
+      try {
       String translation = await ApiHandler.uploadImage(
         filePath: _capturedImage!.path,
       );
-      //String translation = 'test';
       setState(() {
         _isUploading = false;
         _translatedImageWord = translation;
       });
     } catch (e) {
-      _showError("Error taking picture: $e");
+        _showError("Error uploading image: $e");
       setState(() => _isUploading = false);
-    } finally {
-      setState(() => _isSaving = false);
+      }
     }
+
+    setState(() => _isSaving = false);
   }
 
   void _showError(String message) {
@@ -175,9 +182,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             CupertinoDialogAction(
               isDefaultAction: true,
               child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         );
@@ -200,34 +205,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               _CameraPreviewWidget(),
               const SizedBox(height: 24),
               Row(
-                mainAxisSize:
-                    MainAxisSize.min, // <- important to shrink row to content
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Switch Button
                   CupertinoButton(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     color: CupertinoColors.systemGrey5,
                     borderRadius: BorderRadius.circular(30),
-                    child: Icon(CupertinoIcons.camera_rotate, size: 28),
+                    child: const Icon(CupertinoIcons.camera_rotate, size: 28),
                     onPressed: () async {
                       _selectedCameraIndex = _selectedCameraIndex == 1 ? 0 : 1;
                       await _setupCameraController(_selectedCameraIndex);
                     },
                   ),
-
                   const SizedBox(width: 20),
-
-                  // Image Capture Button
                   _imageButton(),
-
                   const SizedBox(width: 20),
-
-                  // Record Button
                   _recordButton(),
                 ],
               ),
-
               const SizedBox(height: 16),
               _RecordingStatus(),
               const SizedBox(height: 24),
@@ -288,7 +283,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _imageButton() {
     return GestureDetector(
-      onTap: _isSaving ? null : _takePicture,
+      onTap: (_isSaving || _isUploading) ? null : _takePicture,
       child: Icon(
         CupertinoIcons.camera_circle,
         size: 80,
@@ -299,70 +294,54 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _RecordingStatus() {
-    return Column(
-      children: [
-        if (_isRecording)
-          Text(
+    if (_isRecording) {
+      return const Text(
             'Recording Video...',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.red,
             ),
-          )
-        else if (_isSaving)
-          Text(
+      );
+    } else if (_isSaving) {
+      return const Text(
             'Processing...',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: CupertinoColors.systemOrange,
             ),
-          )
-        else
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  ],
-          ),
-      ],
-    );
+      );
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 
   Widget _Translation() {
+    final String? translation = _translatedWord ?? _translatedImageWord;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 8),
-        if (_translatedWord != null)
+        const SizedBox(height: 8),
+        if (translation != null)
           Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Video Translation:",
+              const Text(
+                "الترجمة:",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: CupertinoColors.systemBlue,
+                  color: CupertinoColors.activeBlue,
                 ),
               ),
               Text(
-                _translatedWord!,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        if (_translatedImageWord != null)
-          Column(
-            children: [
-              Text(
-                "Image Translation:",
-                style: TextStyle(
-                  fontSize: 16,
+                translation,
+                style: const TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: CupertinoColors.systemGreen,
                 ),
-              ),
-              Text(
-                _translatedImageWord!,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
             ],
