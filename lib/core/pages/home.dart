@@ -1,7 +1,8 @@
-import 'package:efhmni/core/utils/api-handler.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:efhmni/core/utils/api-handler.dart';
+import 'package:camera/camera.dart';
+import 'package:flutter_tts/flutter_tts.dart'; // Import flutter_tts for TTS functionality
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -22,11 +23,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? _translatedImageWord;
   int _selectedCameraIndex = 0;
 
+  FlutterTts flutterTts = FlutterTts(); // Initialize TTS instance
+
   @override
   void initState() {
     super.initState();
     _setupCameraController(_selectedCameraIndex);
     WidgetsBinding.instance.addObserver(this);
+    _configureTTS(); // Configure TTS settings
   }
 
   @override
@@ -113,17 +117,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     if (_recordedVideo != null) {
-    setState(() => _isUploading = true);
-    try {
-      String translation = await ApiHandler.uploadVideo(
-        filePath: _recordedVideo!.path,
-      );
-      setState(() {
-        _isUploading = false;
-        _translatedWord = translation;
-      });
-    } catch (e) {
-      _showError("Error uploading video: $e");
+      setState(() => _isUploading = true);
+      try {
+        String translation = await ApiHandler.uploadVideo(
+          filePath: _recordedVideo!.path,
+        );
+        setState(() {
+          _isUploading = false;
+          _translatedWord = translation;
+          _speakTranslation(_translatedWord); // Speak the translated word
+        });
+      } catch (e) {
+        _showError("Error uploading video: $e");
         setState(() => _isUploading = false);
       }
     }
@@ -152,22 +157,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (_capturedImage != null) {
       setState(() => _isUploading = true);
       try {
-      String translation = await ApiHandler.uploadImage(
-        filePath: _capturedImage!.path,
-      );
-      setState(() {
-        _isUploading = false;
-        _translatedImageWord = translation;
-      });
-    } catch (e) {
+        String translation = await ApiHandler.uploadImage(
+          filePath: _capturedImage!.path,
+        );
+        setState(() {
+          _isUploading = false;
+          _translatedImageWord = translation;
+          _speakTranslation(_translatedImageWord); // Speak the translated word
+        });
+      } catch (e) {
         _showError("Error uploading image: $e");
-      setState(() => _isUploading = false);
+        setState(() => _isUploading = false);
       }
     }
 
     setState(() => _isSaving = false);
   }
 
+  // Configure TTS settings (Set to Arabic)
+  Future<void> _configureTTS() async {
+    await flutterTts.setLanguage('ar'); // Set language to Arabic (ar)
+    await flutterTts.setSpeechRate(0.5); // Adjust speech rate
+  }
+
+  // Speak the translated word
+  Future<void> _speakTranslation(String? word) async {
+    if (word != null && word.isNotEmpty) {
+      await flutterTts.speak(word); // Speak the word in Arabic
+    }
+  }
+
+  // Show error message
   void _showError(String message) {
     if (!mounted) return;
     setState(() => _errorMessage = message);
@@ -293,24 +313,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
+  Widget _speakButton() {
+    return CupertinoButton.filled(
+      onPressed: () {
+        _speakTranslation('احمد');
+      },
+      child: Icon(
+        CupertinoIcons.speaker,
+        size: 80,
+        color:
+            _isSaving ? CupertinoColors.systemGrey : CupertinoColors.activeBlue,
+      ),
+    );
+  }
+
   Widget _RecordingStatus() {
     if (_isRecording) {
       return const Text(
-            'Recording Video...',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.red,
-            ),
+        'Recording Video...',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.red,
+        ),
       );
     } else if (_isSaving) {
       return const Text(
-            'Processing...',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: CupertinoColors.systemOrange,
-            ),
+        'Processing...',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: CupertinoColors.systemOrange,
+        ),
       );
     } else {
       return const SizedBox.shrink();
