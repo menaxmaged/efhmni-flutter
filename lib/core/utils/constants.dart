@@ -131,4 +131,7 @@ final List<Map<String, String>> imagesWithText = [
   {'image': 'assets/images/words/dad.png', 'text': 'اب'},
   {'image': 'assets/images/words/bro.png', 'text': 'أخ'},
   {'image': 'assets/images/words/sis.png', 'text': 'أخت'},
+  {'image': 'assets/images/words/name.png', 'text': 'آسمك اية'},
+  {'image': 'assets/images/words/hello.png', 'text': 'السلام عليكم'},
+  {'image': 'assets/images/words/thank.png', 'text': 'الحمدلله'},
 ];
